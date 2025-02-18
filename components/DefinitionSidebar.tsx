@@ -32,6 +32,9 @@ export function DefinitionSidebar({ word, context, onClose }: DefinitionSidebarP
       return
     }
 
+    // Reset save status when word changes
+    setSaveSuccess(false)
+
     async function fetchDefinition() {
       setIsLoading(true)
       setError(null)

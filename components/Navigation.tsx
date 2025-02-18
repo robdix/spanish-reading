@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
+import { NewspaperIcon } from '@heroicons/react/24/outline'
 
 const menuItems = [
   {
@@ -24,6 +25,12 @@ const menuItems = [
     name: 'Transcripts',
     href: '/transcripts',
     description: 'Upload and analyze Spanish text'
+  },
+  {
+    name: 'Translate',
+    href: '/translate',
+    description: 'Translate English text to Spanish',
+    icon: NewspaperIcon
   },
   // Future modules:
   // { name: 'Vocabulary', href: '/vocabulary', description: 'Review saved words and phrases' },

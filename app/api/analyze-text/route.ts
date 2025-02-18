@@ -7,9 +7,41 @@ const anthropic = new Anthropic({
 
 export async function POST(request: Request) {
   try {
-    const { text } = await request.json()
+    const { text, isTranslation } = await request.json()
     
-    const prompt = `
+    const prompt = isTranslation ? `
+You are a Spanish language teacher helping students understand a translated text.
+
+Analyze this Spanish translation and identify:
+1. Key vocabulary used in the translation that matches the specified level
+2. Idiomatic expressions and natural Spanish constructions
+3. Grammar patterns that might be new or challenging
+4. Cultural adaptations made in the translation
+
+Focus on items that demonstrate how Spanish expresses these ideas naturally.
+
+Return your analysis as a JSON array of items in this format:
+{
+  "items": [
+    {
+      "phrase": "the word or phrase in Spanish",
+      "type": "word" | "idiom" | "collocation",
+      "translation": "English translation",
+      "context": "the sentence or fragment where this appears",
+      "notes": "optional explanation of usage or cultural context"
+    }
+  ]
+}
+
+Text to analyze: "${text}"
+
+Important:
+- Include 5-8 items that best represent natural Spanish expression
+- Focus on phrases that show how Spanish differs from English
+- Provide the specific context from the translation
+- Explain any cultural or usage nuances in the notes
+- Return ONLY valid JSON matching the format above, no other text
+` : `
 You are a Spanish language teacher helping intermediate (B1-B2) students understand a text.
 
 Analyze this Spanish text and identify:
@@ -35,7 +67,7 @@ Return your analysis as a JSON array of items in this format:
 Text to analyze: "${text}"
 
 Important:
-- Include 5-10 items maximum
+- Include 10 items minimum
 - Focus on phrases that are both useful and challenging
 - Provide natural context from the original text
 - Explain any cultural or usage nuances in the notes
@@ -51,8 +83,18 @@ Important:
       }]
     })
 
-    const analysis = JSON.parse(response.content[0].text)
-    return NextResponse.json(analysis)
+    console.log('Claude response:', response.content[0].text)
+    
+    try {
+      const analysis = JSON.parse(response.content[0].text)
+      return NextResponse.json(analysis)
+    } catch (parseError) {
+      console.error('Failed to parse Claude response:', response.content[0].text)
+      return NextResponse.json(
+        { error: 'Invalid response format from analysis service' },
+        { status: 500 }
+      )
+    }
 
   } catch (error) {
     console.error('Text analysis error:', error)
