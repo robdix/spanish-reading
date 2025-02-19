@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/utils/supabase'
+import { AnkiExportModal } from '@/components/AnkiExportModal'
+import { CheckCircleIcon } from '@heroicons/react/24/outline'
+import { AddWordModal } from '@/components/AddWordModal'
 
 interface VocabularyEntry {
   id: string
@@ -10,9 +13,14 @@ interface VocabularyEntry {
   example: string
   example_translation: string
   infinitive: string | null
+  exported_at: string | null
 }
 
-function DictionaryEntry({ entry, onDelete }: { entry: VocabularyEntry, onDelete: (id: string) => void }) {
+function DictionaryEntry({ entry, onDelete, onToggleExported }: { 
+  entry: VocabularyEntry, 
+  onDelete: (id: string) => void,
+  onToggleExported: (id: string, exported: boolean) => void 
+}) {
   const [isConfirming, setIsConfirming] = useState(false)
 
   return (
@@ -30,6 +38,17 @@ function DictionaryEntry({ entry, onDelete }: { entry: VocabularyEntry, onDelete
           <p className="text-gray-700 mt-2">{entry.definition}</p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => onToggleExported(entry.id, !entry.exported_at)}
+            className={`p-1 rounded-full transition-colors ${
+              entry.exported_at 
+                ? 'text-green-600 hover:text-green-700' 
+                : 'text-gray-300 hover:text-gray-400'
+            }`}
+            title={entry.exported_at ? 'Exported to Anki' : 'Not exported'}
+          >
+            <CheckCircleIcon className="w-6 h-6" />
+          </button>
           {isConfirming ? (
             <>
               <button
@@ -70,6 +89,8 @@ export default function DictionaryPage() {
   const [entries, setEntries] = useState<VocabularyEntry[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false)
+  const [isAddWordModalOpen, setIsAddWordModalOpen] = useState(false)
 
   useEffect(() => {
     fetchEntries()
@@ -121,6 +142,139 @@ export default function DictionaryPage() {
     }
   }
 
+  const handleToggleExported = async (id: string, exported: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('user_vocabulary')
+        .update({ 
+          exported_at: exported ? new Date().toISOString() : null 
+        })
+        .eq('id', id)
+
+      if (error) throw error
+
+      setEntries(entries.map(entry => 
+        entry.id === id 
+          ? { ...entry, exported_at: exported ? new Date().toISOString() : null }
+          : entry
+      ))
+    } catch (error) {
+      console.error('Error updating export status:', error)
+    }
+  }
+
+  const handleExport = async (fieldMappings: string[], exportType: 'all' | 'new') => {
+    // Get all dictionary entries
+    const { data: entriesToExport, error } = await supabase
+      .from('user_vocabulary')
+      .select('*')
+      .order('word')
+      // Only add this condition for 'new' export type
+      .is('exported_at', exportType === 'new' ? null : undefined)
+
+    if (error) {
+      console.error('Error fetching entries:', error)
+      return
+    }
+
+    if (!entriesToExport || entriesToExport.length === 0) {
+      return // No entries to export
+    }
+
+    // Create the export content
+    const headers = [
+      '#separator:Semicolon',
+      '#html:true',
+      ''  // Empty line after headers
+    ].join('\n')
+
+    const content = entriesToExport.map(entry => {
+      return fieldMappings.map(field => {
+        if (!field) return ''
+        
+        let value = entry[field] || ''
+        
+        // Special handling for example field to bold the word
+        if (field === 'example' && value) {
+          const wordPattern = new RegExp(`(${entry.word})`, 'gi')
+          value = value.replace(wordPattern, '<b>$1</b>')
+          
+          // If it's a verb, also try to match the infinitive
+          if (entry.infinitive) {
+            const infinitivePattern = new RegExp(`(${entry.infinitive})`, 'gi')
+            value = value.replace(infinitivePattern, '<b>$1</b>')
+          }
+        }
+
+        // Escape semicolons and quotes
+        if (value.includes(';') || value.includes('"')) {
+          value = `"${value.replace(/"/g, '""')}"`
+        }
+
+        return value
+      }).join(';')
+    }).join('\n')
+
+    // Create and download the file
+    const blob = new Blob([headers + content], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'anki-export.txt'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+
+    // After successful export, mark entries as exported
+    const { error: updateError } = await supabase
+      .from('user_vocabulary')
+      .update({ exported_at: new Date().toISOString() })
+      .in('id', entriesToExport.map(e => e.id))
+
+    if (!updateError) {
+      // Update local state
+      setEntries(currentEntries => 
+        currentEntries.map(entry => 
+          entriesToExport.some(e => e.id === entry.id)
+            ? { ...entry, exported_at: new Date().toISOString() }
+            : entry
+        )
+      )
+    }
+  }
+
+  const handleAddWord = async (entry: {
+    word: string
+    definition: string
+    example: string
+    example_translation: string
+    infinitive: string | null
+  }) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      const { data, error } = await supabase
+        .from('user_vocabulary')
+        .upsert({
+          user_id: user.id,
+          ...entry
+        }, {
+          onConflict: 'user_id,word',
+          ignoreDuplicates: false
+        })
+
+      if (error) throw error
+
+      // Refresh entries
+      await fetchEntries()
+    } catch (error) {
+      console.error('Error adding word:', error)
+      throw error
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
@@ -147,6 +301,24 @@ export default function DictionaryPage() {
           </div>
         )}
 
+        <div className="mb-6 flex justify-between items-center">
+          <h1 className="text-3xl font-bold">My Dictionary</h1>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setIsAddWordModalOpen(true)}
+              className="btn-secondary"
+            >
+              Add Word
+            </button>
+            <button
+              onClick={() => setIsExportModalOpen(true)}
+              className="btn-primary"
+            >
+              Export to Anki
+            </button>
+          </div>
+        </div>
+
         {entries.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-6 text-center text-gray-500">
             No words saved yet. Click any word while reading to look it up and save it to your dictionary.
@@ -158,11 +330,26 @@ export default function DictionaryPage() {
                 key={entry.id} 
                 entry={entry} 
                 onDelete={handleDelete}
+                onToggleExported={handleToggleExported}
               />
             ))}
           </div>
         )}
       </div>
+
+      <AddWordModal
+        isOpen={isAddWordModalOpen}
+        onClose={() => setIsAddWordModalOpen(false)}
+        onSave={handleAddWord}
+      />
+
+      <AnkiExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        onExport={handleExport}
+        newEntriesCount={entries.filter(e => !e.exported_at).length}
+        totalEntriesCount={entries.length}
+      />
     </div>
   )
 } 

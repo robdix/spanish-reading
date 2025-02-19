@@ -19,10 +19,9 @@ export interface Definition {
   example: string
   exampleTranslation: string
   type: string
-  notes?: string
   infinitive?: string
+  notes?: string
   contextualMeaning?: string
-  stats?: WordStats
 }
 
 export interface WordStats {
