@@ -163,13 +163,12 @@ export default function DictionaryPage() {
     }
   }
 
-  const handleExport = async (fieldMappings: string[], exportType: 'all' | 'new') => {
+  const handleExport = async (fieldMappings: { fields: string[], separator: string }[], exportType: 'all' | 'new') => {
     // Get all dictionary entries
     const { data: entriesToExport, error } = await supabase
       .from('user_vocabulary')
       .select('*')
       .order('word')
-      // Only add this condition for 'new' export type
       .is('exported_at', exportType === 'new' ? null : undefined)
 
     if (error) {
@@ -189,29 +188,36 @@ export default function DictionaryPage() {
     ].join('\n')
 
     const content = entriesToExport.map(entry => {
-      return fieldMappings.map(field => {
-        if (!field) return ''
-        
-        let value = entry[field] || ''
-        
-        // Special handling for example field to bold the word
-        if (field === 'example' && value) {
-          const wordPattern = new RegExp(`(${entry.word})`, 'gi')
-          value = value.replace(wordPattern, '<b>$1</b>')
-          
-          // If it's a verb, also try to match the infinitive
-          if (entry.infinitive) {
-            const infinitivePattern = new RegExp(`(${entry.infinitive})`, 'gi')
-            value = value.replace(infinitivePattern, '<b>$1</b>')
-          }
-        }
+      return fieldMappings.map(mapping => {
+        // Combine all fields with their separator
+        const combinedValue = mapping.fields
+          .map(field => {
+            if (!field) return ''
+            
+            let value = entry[field] || ''
+            
+            // Special handling for example field to bold the word
+            if (field === 'example' && value) {
+              const wordPattern = new RegExp(`(${entry.word})`, 'gi')
+              value = value.replace(wordPattern, '<b>$1</b>')
+              
+              if (entry.infinitive) {
+                const infinitivePattern = new RegExp(`(${entry.infinitive})`, 'gi')
+                value = value.replace(infinitivePattern, '<b>$1</b>')
+              }
+            }
+            
+            return value
+          })
+          .filter(Boolean) // Remove empty values
+          .join(mapping.separator)
 
         // Escape semicolons and quotes
-        if (value.includes(';') || value.includes('"')) {
-          value = `"${value.replace(/"/g, '""')}"`
+        if (combinedValue.includes(';') || combinedValue.includes('"')) {
+          return `"${combinedValue.replace(/"/g, '""')}"`
         }
 
-        return value
+        return combinedValue
       }).join(';')
     }).join('\n')
 

@@ -13,12 +13,9 @@ export async function POST(request: Request) {
 You are a Spanish language teacher helping students understand a translated text.
 
 Analyze this Spanish translation and identify:
-1. Key vocabulary used in the translation that matches the specified level
-2. Idiomatic expressions and natural Spanish constructions
+1. Key vocabulary used in the translation that is necessary for understanding the translation (especially anything specialised, technical, or otherwise unusual)
+2. Idiomatic expressions or slang that are used in the translation
 3. Grammar patterns that might be new or challenging
-4. Cultural adaptations made in the translation
-
-Focus on items that demonstrate how Spanish expresses these ideas naturally.
 
 Return your analysis as a JSON array of items in this format:
 {
@@ -36,20 +33,17 @@ Return your analysis as a JSON array of items in this format:
 Text to analyze: "${text}"
 
 Important:
-- Include 5-8 items that best represent natural Spanish expression
-- Focus on phrases that show how Spanish differs from English
-- Provide the specific context from the translation
-- Explain any cultural or usage nuances in the notes
+- Include at least 8 items
 - Return ONLY valid JSON matching the format above, no other text
 ` : `
 You are a Spanish language teacher helping intermediate (B1-B2) students understand a text.
 
 Analyze this Spanish text and identify:
-1. Key words and phrases that are essential for understanding the main points
+1. Key words and phrases that are essential for understanding the main points (especially anything specialised, technical, or otherwise unusual)
 2. Idiomatic expressions and collocations
 3. Advanced or uncommon vocabulary that intermediate learners might not know
 
-Focus on items that would be most valuable for a B1-B2 learner to add to their vocabulary.
+Focus on itemsthat are core to the meaning of the text and that would be most valuable for a B1-B2 learner to add to their vocabulary.
 
 Return your analysis as a JSON array of items in this format:
 {
@@ -68,9 +62,6 @@ Text to analyze: "${text}"
 
 Important:
 - Include 10 items minimum
-- Focus on phrases that are both useful and challenging
-- Provide natural context from the original text
-- Explain any cultural or usage nuances in the notes
 - Return ONLY the JSON, no other text
 `
 

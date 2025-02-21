@@ -2,10 +2,15 @@
 
 import { useState, useEffect } from 'react'
 
+interface FieldMapping {
+  fields: string[]
+  separator: string
+}
+
 interface AnkiExportModalProps {
   isOpen: boolean
   onClose: () => void
-  onExport: (fieldMappings: string[], exportType: 'all' | 'new') => void
+  onExport: (fieldMappings: FieldMapping[], exportType: 'all' | 'new') => void
   newEntriesCount: number
   totalEntriesCount: number
 }
@@ -20,8 +25,18 @@ const FIELD_OPTIONS = [
   { label: 'Notes', value: 'notes' }
 ] as const
 
+const SEPARATOR_OPTIONS = [
+  { label: 'Line Break', value: '<br>' },
+  { label: 'Paragraph Break', value: '<br><br>' },
+  { label: 'Space', value: ' ' },
+  { label: 'Comma', value: ', ' },
+  { label: 'Dash', value: ' - ' },
+] as const
+
 export function AnkiExportModal({ isOpen, onClose, onExport, newEntriesCount, totalEntriesCount }: AnkiExportModalProps) {
-  const [fieldMappings, setFieldMappings] = useState<string[]>(Array(6).fill(''))
+  const [fieldMappings, setFieldMappings] = useState<FieldMapping[]>(
+    Array(6).fill({ fields: [''], separator: '<br>' })
+  )
   const [exportType, setExportType] = useState<'all' | 'new'>('new')
 
   // Close on escape key
@@ -43,6 +58,52 @@ export function AnkiExportModal({ isOpen, onClose, onExport, newEntriesCount, to
     onClose()
   }
 
+  const handleAddField = (ankiFieldIndex: number) => {
+    setFieldMappings(current => {
+      const newMappings = [...current]
+      newMappings[ankiFieldIndex] = {
+        ...newMappings[ankiFieldIndex],
+        fields: [...newMappings[ankiFieldIndex].fields, '']
+      }
+      return newMappings
+    })
+  }
+
+  const handleRemoveField = (ankiFieldIndex: number, fieldIndex: number) => {
+    setFieldMappings(current => {
+      const newMappings = [...current]
+      newMappings[ankiFieldIndex] = {
+        ...newMappings[ankiFieldIndex],
+        fields: newMappings[ankiFieldIndex].fields.filter((_, i) => i !== fieldIndex)
+      }
+      return newMappings
+    })
+  }
+
+  const handleFieldChange = (ankiFieldIndex: number, fieldIndex: number, value: string) => {
+    setFieldMappings(current => {
+      const newMappings = [...current]
+      newMappings[ankiFieldIndex] = {
+        ...newMappings[ankiFieldIndex],
+        fields: newMappings[ankiFieldIndex].fields.map((f, i) => 
+          i === fieldIndex ? value : f
+        )
+      }
+      return newMappings
+    })
+  }
+
+  const handleSeparatorChange = (ankiFieldIndex: number, separator: string) => {
+    setFieldMappings(current => {
+      const newMappings = [...current]
+      newMappings[ankiFieldIndex] = {
+        ...newMappings[ankiFieldIndex],
+        separator
+      }
+      return newMappings
+    })
+  }
+
   return (
     <>
       <div 
@@ -53,14 +114,14 @@ export function AnkiExportModal({ isOpen, onClose, onExport, newEntriesCount, to
       
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <div 
-          className="relative mx-auto max-w-xl bg-white rounded-xl p-6"
+          className="relative mx-auto max-w-xl w-full bg-white rounded-xl p-6"
           onClick={e => e.stopPropagation()}
         >
           <h2 className="text-xl font-bold mb-4">
             Export to Anki
           </h2>
 
-          <div className="space-y-4 mb-6">
+          <div className="space-y-4 mb-6 max-h-[70vh] overflow-y-auto pr-2">
             <div className="bg-gray-50 p-4 rounded-lg space-y-2">
               <div className="flex items-center gap-2">
                 <input
@@ -104,29 +165,68 @@ export function AnkiExportModal({ isOpen, onClose, onExport, newEntriesCount, to
               The same field can be used multiple times.
             </p>
 
-            {fieldMappings.map((mapping, index) => (
-              <div key={index} className="flex items-center gap-4">
-                <label className="w-24">Field {index + 1}:</label>
-                <select
-                  value={mapping}
-                  onChange={(e) => {
-                    const newMappings = [...fieldMappings]
-                    newMappings[index] = e.target.value
-                    setFieldMappings(newMappings)
-                  }}
-                  className="form-select rounded-md border-gray-300 shadow-sm flex-1"
-                >
-                  {FIELD_OPTIONS.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ))}
+            <div className="space-y-6">
+              {fieldMappings.map((mapping, ankiFieldIndex) => (
+                <div key={ankiFieldIndex} className="space-y-2">
+                  <label className="block font-medium">Anki Field {ankiFieldIndex + 1}:</label>
+                  
+                  <div className="space-y-2">
+                    {mapping.fields.map((field, fieldIndex) => (
+                      <div key={fieldIndex} className="flex items-center gap-2">
+                        <select
+                          value={field}
+                          onChange={(e) => handleFieldChange(ankiFieldIndex, fieldIndex, e.target.value)}
+                          className="form-select rounded-md border-gray-300 shadow-sm flex-1"
+                        >
+                          {FIELD_OPTIONS.map(option => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                        
+                        {fieldIndex > 0 && (
+                          <button
+                            onClick={() => handleRemoveField(ankiFieldIndex, fieldIndex)}
+                            className="text-gray-400 hover:text-gray-600"
+                            title="Remove field"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {mapping.fields.length > 1 && (
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm text-gray-600">Separator:</label>
+                      <select
+                        value={mapping.separator}
+                        onChange={(e) => handleSeparatorChange(ankiFieldIndex, e.target.value)}
+                        className="form-select rounded-md border-gray-300 shadow-sm text-sm"
+                      >
+                        {SEPARATOR_OPTIONS.map(option => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => handleAddField(ankiFieldIndex)}
+                    className="text-sm text-blue-600 hover:text-blue-800"
+                  >
+                    + Add another field
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="flex justify-end gap-3">
+          <div className="flex justify-end gap-3 pt-2 border-t">
             <button
               onClick={onClose}
               className="px-4 py-2 text-gray-600 hover:text-gray-800"

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Language Learning Assistant</title>
+  <style>
+    body {
+      width: 400px;
+      padding: 16px;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    select, button {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 16px;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:disabled {
+      background: #93c5fd;
+      cursor: not-allowed;
+    }
+    #preview {
+      max-height: 200px;
+      overflow-y: auto;
+      margin-bottom: 16px;
+    }
+    #error {
+      color: #dc2626;
+      font-size: 14px;
+    }
+    textarea {
+      font-family: inherit;
+      resize: vertical;
+      min-height: 2.5em;
+    }
+    textarea:last-child {
+      min-height: 150px;
+    }
+    .preview-container {
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <select id="level-select">
+    <option value="A1">Beginner (A1)</option>
+    <option value="A2">Elementary (A2)</option>
+    <option value="B1" selected>Intermediate (B1)</option>
+    <option value="B2">Upper Intermediate (B2)</option>
+    <option value="C1">Advanced (C1)</option>
+  </select>
+
+  <div id="preview"></div>
+  <div id="error"></div>
+
+  <button id="translate-button" disabled>
+    Translate Article
+  </button>
+
+  <script src="popup.js"></script>
+</body>
+</html> 

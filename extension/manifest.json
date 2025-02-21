@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Language Learning Assistant",
+  "version": "1.0",
+  "description": "Easily send articles to your language learning app for translation",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "action": {
+    "default_popup": "popup/popup.html"
+  }
+} 

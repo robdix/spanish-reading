@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DefinitionSidebar } from '@/components/DefinitionSidebar'
 import { StoryDisplay } from '@/components/StoryDisplay'
 import { StatsOverview } from '@/components/StatsOverview'
@@ -18,10 +18,17 @@ interface AnalysisItem {
   notes?: string
 }
 
-export default function TranslatePage() {
-  const [text, setText] = useState('')
+export default function TranslatePage({
+  searchParams
+}: {
+  searchParams: { text?: string, level?: string, source?: string }
+}) {
+  // If coming from extension, use the URL parameters
+  const [text, setText] = useState(searchParams.text || '')
   const [translation, setTranslation] = useState<string | null>(null)
-  const [difficulty, setDifficulty] = useState<Difficulty>('B1')
+  const [difficulty, setDifficulty] = useState<Difficulty>(
+    (searchParams.level as Difficulty) || 'B1'
+  )
   const [error, setError] = useState<string | null>(null)
   const [isTranslating, setIsTranslating] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -30,6 +37,19 @@ export default function TranslatePage() {
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null)
   const [analysisItems, setAnalysisItems] = useState<AnalysisItem[]>([])
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+
+  // Auto-translate when coming from extension
+  useEffect(() => {
+    if (searchParams.source === 'extension' && text && !translation) {
+      // Create a synthetic event that matches React's FormEvent type
+      const syntheticEvent = {
+        preventDefault: () => {},
+        target: document.createElement('form')
+      } as React.FormEvent<HTMLFormElement>
+      
+      handleTranslate(syntheticEvent)
+    }
+  }, []) // Run once on mount
 
   const handleTranslate = async (e: React.FormEvent) => {
     e.preventDefault()
