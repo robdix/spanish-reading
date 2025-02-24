@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Language Learning Assistant Settings</title>
+  <style>
+    body {
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    .section {
+      margin-bottom: 24px;
+      padding: 16px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+    }
+    h2 {
+      margin-top: 0;
+      color: #1f2937;
+    }
+    .shortcut-info {
+      background: #f3f4f6;
+      padding: 12px;
+      border-radius: 6px;
+      margin-top: 12px;
+    }
+    .btn {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background: #1d4ed8;
+    }
+  </style>
+</head>
+<body>
+  <div class="section">
+    <h2>Keyboard Shortcuts</h2>
+    <p>Configure keyboard shortcuts for quick access to features.</p>
+    
+    <div>
+      <h3>Look up word</h3>
+      <p>Current shortcut: <span id="current-shortcut">Loading...</span></p>
+      <div class="shortcut-info">
+        To change this shortcut:
+        <ol>
+          <li>Click the menu icon in Chrome (⋮)</li>
+          <li>Go to More Tools > Extensions</li>
+          <li>Scroll to the bottom and click "Keyboard shortcuts"</li>
+          <li>Find "Language Learning Assistant" and set your preferred shortcut</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <script src="settings.js"></script>
+</body>
+</html> 

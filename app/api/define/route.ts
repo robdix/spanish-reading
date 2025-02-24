@@ -6,6 +6,17 @@ const anthropic = new Anthropic({
 })
 
 export async function POST(request: Request) {
+  // Add CORS headers
+  if (request.method === 'OPTIONS') {
+    return new NextResponse(null, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      },
+    })
+  }
+
   try {
     const { word, context } = await request.json()
     console.log('Received word:', word)
@@ -53,13 +64,22 @@ Important:
     // Parse the JSON from Claude's response
     const definition = JSON.parse(response.content[0].text)
     
-    return NextResponse.json(definition)
+    return NextResponse.json(definition, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+      },
+    })
 
   } catch (error) {
     console.error('Definition error:', error)
     return NextResponse.json(
       { error: 'Failed to get definition' },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+        },
+      }
     )
   }
 } 

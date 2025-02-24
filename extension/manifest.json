@@ -5,9 +5,28 @@
   "description": "Easily send articles to your language learning app for translation",
   "permissions": [
     "activeTab",
-    "scripting"
+    "scripting",
+    "contextMenus",
+    "windows",
+    "storage",
+    "commands"
+  ],
+  "commands": {
+    "lookup-word": {
+      "suggested_key": {
+        "default": "Alt+D"
+      },
+      "description": "Look up selected word"
+    }
+  },
+  "host_permissions": [
+    "http://localhost:3000/*"
   ],
   "action": {
     "default_popup": "popup/popup.html"
-  }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "options_page": "settings/settings.html"
 } 

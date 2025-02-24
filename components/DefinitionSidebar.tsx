@@ -17,9 +17,10 @@ interface DefinitionSidebarProps {
   word: string | null
   context: string
   onClose: () => void
+  isExtension?: boolean
 }
 
-export function DefinitionSidebar({ word, context, onClose }: DefinitionSidebarProps) {
+export function DefinitionSidebar({ word, context, onClose, isExtension }: DefinitionSidebarProps) {
   const [definition, setDefinition] = useState<Definition | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -85,6 +86,13 @@ export function DefinitionSidebar({ word, context, onClose }: DefinitionSidebarP
 
       if (error) throw error
       setSaveSuccess(true)
+
+      // Auto-close after successful save if in extension
+      if (isExtension) {
+        setTimeout(() => {
+          window.close()
+        }, 1000) // Give user a moment to see "Saved!" message
+      }
     } catch (error) {
       console.error('Error saving to dictionary:', error)
       setError('Failed to save to dictionary')
