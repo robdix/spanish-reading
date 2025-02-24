@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/utils/supabase'
+import { ExternalReadingForm } from './ExternalReadingForm'
 
 interface Stats {
   todayWords: number
@@ -22,6 +23,7 @@ export function StatsOverview({ className = '' }: Props) {
   const [isEditingOverall, setIsEditingOverall] = useState(false)
   const [newDailyGoal, setNewDailyGoal] = useState<string>('')
   const [newOverallGoal, setNewOverallGoal] = useState<string>('')
+  const [showExternalForm, setShowExternalForm] = useState(false)
 
   useEffect(() => {
     fetchStats()
@@ -53,17 +55,42 @@ export function StatsOverview({ className = '' }: Props) {
 
       // Calculate streak
       let streak = 0
-      let currentDate = new Date()
-      
-      for (const stat of allTimeStats || []) {
-        const statDate = new Date(stat.date)
-        const dayDiff = Math.floor((currentDate.getTime() - statDate.getTime()) / (1000 * 60 * 60 * 24))
+      const todayDate = new Date()
+      todayDate.setHours(0, 0, 0, 0) // Normalize to start of day
+      const yesterdayDate = new Date(todayDate)
+      yesterdayDate.setDate(yesterdayDate.getDate() - 1)
+
+      // Check if there's activity today or yesterday to continue the streak
+      const mostRecentStat = allTimeStats?.[0]
+      if (mostRecentStat) {
+        const mostRecentDate = new Date(mostRecentStat.date)
+        mostRecentDate.setHours(0, 0, 0, 0)
         
-        if (dayDiff === streak && stat.words_read > 0) {
-          streak++
-          currentDate = statDate
-        } else {
-          break
+        // If most recent activity was today or yesterday and had words read
+        if ((mostRecentDate.getTime() === todayDate.getTime() || 
+             mostRecentDate.getTime() === yesterdayDate.getTime()) && 
+             mostRecentStat.words_read > 0) {
+          
+          streak = 1 // Start the streak
+          let previousDate = mostRecentDate
+          
+          // Check consecutive days before the most recent
+          for (let i = 1; i < (allTimeStats?.length || 0); i++) {
+            const stat = allTimeStats[i]
+            const currentDate = new Date(stat.date)
+            currentDate.setHours(0, 0, 0, 0)
+            
+            // Check if this date is exactly 1 day before the previous one
+            const expectedPrevious = new Date(previousDate)
+            expectedPrevious.setDate(expectedPrevious.getDate() - 1)
+            
+            if (currentDate.getTime() === expectedPrevious.getTime() && stat.words_read > 0) {
+              streak++
+              previousDate = currentDate
+            } else {
+              break // Break the streak if we miss a day
+            }
+          }
         }
       }
 
@@ -153,6 +180,16 @@ export function StatsOverview({ className = '' }: Props) {
 
   return (
     <div className={`bg-white rounded-lg shadow-sm border border-gray-100 p-4 ${className}`}>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold">Reading Stats</h2>
+        <button
+          onClick={() => setShowExternalForm(true)}
+          className="text-sm text-blue-600 hover:text-blue-800"
+        >
+          + Log External Reading
+        </button>
+      </div>
+
       <div className="grid grid-cols-4 gap-4">
         <div className="text-center">
           <div className="relative">
@@ -248,6 +285,18 @@ export function StatsOverview({ className = '' }: Props) {
           <p className="text-sm font-medium text-gray-500">Streak</p>
         </div>
       </div>
+
+      {showExternalForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <ExternalReadingForm
+            onSuccess={() => {
+              setShowExternalForm(false)
+              fetchStats()
+            }}
+            onCancel={() => setShowExternalForm(false)}
+          />
+        </div>
+      )}
     </div>
   )
 } 

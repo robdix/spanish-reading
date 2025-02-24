@@ -16,8 +16,7 @@ You are a Spanish language teacher. Define the Spanish phrase "${word}".
 
 The word/phrase appears in this text: "${context}"
 
-First, analyze if the word is part of a larger phrase or idiomatic expression in the given context.
-If it is part of a larger phrase (like "tener que", "ir a", etc.), mention this in the contextualMeaning.
+If it is part of a larger phrase or idiomatic expression (like "tener que", "ir a", etc.), mention this in the contextualMeaning.
 
 Return your response in this JSON format:
 {

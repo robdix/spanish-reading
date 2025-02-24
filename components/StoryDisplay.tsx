@@ -64,11 +64,15 @@ export function StoryDisplay({ content, error, isLoading, isMarkingAsRead, onWor
           <span className="text-sm text-gray-500 font-sans">
             {countWords(content)} words
           </span>
-          {!isRead && onMarkAsRead && (
+          {onMarkAsRead && (
             <button
               onClick={onMarkAsRead}
-              disabled={isMarkingAsRead}
-              className="btn-primary"
+              disabled={isMarkingAsRead || isRead}
+              className={`px-4 py-2 rounded ${
+                isRead
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-green-600 hover:bg-green-700'
+              } text-white disabled:opacity-50`}
             >
               {isMarkingAsRead ? (
                 <>
@@ -78,6 +82,8 @@ export function StoryDisplay({ content, error, isLoading, isMarkingAsRead, onWor
                   </svg>
                   Saving...
                 </>
+              ) : isRead ? (
+                'Marked as Read ✓'
               ) : (
                 'Mark as Read'
               )}

@@ -37,6 +37,7 @@ export default function TranslatePage({
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null)
   const [analysisItems, setAnalysisItems] = useState<AnalysisItem[]>([])
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [isSaved, setIsSaved] = useState(false)
 
   // Auto-translate when coming from extension
   useEffect(() => {
@@ -110,7 +111,7 @@ export default function TranslatePage({
   }
 
   const handleSave = async () => {
-    if (!translation || !text.trim()) return
+    if (!translation || !text.trim() || isSaved) return
     
     setIsSaving(true)
     setError(null)
@@ -134,6 +135,7 @@ export default function TranslatePage({
 
       await markStoryAsRead(story)
       window.dispatchEvent(new Event('statsUpdated'))
+      setIsSaved(true)
       setNotification({
         type: 'success',
         message: 'Translation saved! Your progress has been updated.'
@@ -150,6 +152,15 @@ export default function TranslatePage({
       setIsSaving(false)
     }
   }
+
+  const handleWordSelect = (word: string, context: string) => {
+    setSelectedWord(word)
+    setContext(context)
+  }
+
+  useEffect(() => {
+    setIsSaved(false)
+  }, [text])
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -204,16 +215,13 @@ export default function TranslatePage({
         <div className="space-y-8">
           <StoryDisplay
             content={translation}
-            error={null}
-            isLoading={false}
-            isMarkingAsRead={isSaving}
-            onWordSelect={(word, context) => {
-              setSelectedWord(word)
-              setContext(context)
-            }}
+            error={error}
+            isLoading={isTranslating}
+            onWordSelect={handleWordSelect}
             selectedWord={selectedWord}
+            isMarkingAsRead={isSaving}
+            isRead={isSaved}
             onMarkAsRead={handleSave}
-            isRead={false}
           />
 
           {analysisItems.length > 0 && (
