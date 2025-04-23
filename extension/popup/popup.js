@@ -305,6 +305,84 @@ document.addEventListener('DOMContentLoaded', () => {
         // Initial word count
         updateWordCount()
 
+        // Create button container
+        const buttonContainer = document.createElement('div')
+        buttonContainer.className = 'mt-4 flex gap-2 justify-end'
+        
+        // Add Log Reading button
+        const logReadingButton = document.createElement('button')
+        logReadingButton.className = 'px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+        logReadingButton.textContent = 'Log Reading'
+        logReadingButton.onclick = async () => {
+          const headlineText = previewDiv.querySelector('textarea.headline')?.value || ''
+          const contentText = previewDiv.querySelector('textarea.content')?.value || ''
+          const totalWords = countWords(headlineText) + countWords(contentText)
+          
+          console.log('Attempting to log reading with:', {
+            wordCount: totalWords,
+            date: new Date().toISOString().split('T')[0],
+            source: 'extension'
+          })
+          
+          // Disable both buttons while processing
+          logReadingButton.disabled = true
+          translateButton.disabled = true
+          const originalText = logReadingButton.textContent
+          logReadingButton.textContent = 'Saving...'
+          
+          try {
+            const response = await fetch('http://localhost:3000/api/log-reading', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              credentials: 'include', // Include cookies for auth
+              body: JSON.stringify({
+                wordCount: totalWords,
+                date: new Date().toISOString().split('T')[0],
+                source: 'extension'
+              })
+            })
+            
+            console.log('Log reading response:', {
+              status: response.status,
+              statusText: response.statusText
+            })
+            
+            if (!response.ok) {
+              const errorData = await response.text()
+              console.error('Server error response:', errorData)
+              throw new Error(`Failed to log reading: ${response.status} ${response.statusText}${errorData ? ` - ${errorData}` : ''}`)
+            }
+
+            // Show success message
+            errorDiv.textContent = 'Reading logged successfully!'
+            errorDiv.className = 'text-green-600 mt-2'
+            
+            // Disable log reading button but keep translate enabled
+            logReadingButton.textContent = 'Logged ✓'
+            logReadingButton.disabled = true
+            translateButton.disabled = false
+            
+          } catch (error) {
+            console.error('Error logging reading:', error)
+            errorDiv.textContent = `Failed to log reading: ${error.message}`
+            errorDiv.className = 'text-red-600 mt-2'
+            
+            // Reset button
+            logReadingButton.textContent = originalText
+            logReadingButton.disabled = false
+            translateButton.disabled = false
+          }
+        }
+        
+        // Update translate button container
+        buttonContainer.appendChild(logReadingButton)
+        buttonContainer.appendChild(translateButton)
+        previewDiv.appendChild(buttonContainer)
+        
+        translateButton.className = 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+        translateButton.disabled = false // Ensure translate button starts enabled
         translateButton.onclick = () => {
           const editedHeadline = previewDiv.querySelector('textarea.headline')?.value || ''
           const editedContent = previewDiv.querySelector('textarea.content')?.value || ''
@@ -325,7 +403,6 @@ document.addEventListener('DOMContentLoaded', () => {
           const url = `http://localhost:3000/translate?${params.toString()}`
           window.open(url, '_blank')
         }
-        translateButton.disabled = false
       } else {
         errorDiv.textContent = 'No article content found on this page'
         translateButton.disabled = true
