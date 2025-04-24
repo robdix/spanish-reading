@@ -4,56 +4,249 @@
   <meta charset="UTF-8">
   <title>Language Learning Assistant</title>
   <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --primary-light: #93c5fd;
+      --error: #dc2626;
+      --success: #059669;
+      --text: #1f2937;
+      --text-light: #6b7280;
+      --bg: #ffffff;
+      --bg-offset: #f3f4f6;
+      --border: #e5e7eb;
+      --radius: 8px;
+      --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    }
+
     body {
       width: 400px;
-      padding: 16px;
+      padding: 20px;
       font-family: system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      margin: 0;
+      line-height: 1.5;
     }
-    select, button {
-      width: 100%;
-      padding: 8px;
-      margin-bottom: 16px;
+
+    .header {
+      margin-bottom: 20px;
     }
-    button {
-      background: #2563eb;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
+
+    .header h1 {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 0 0 4px 0;
+      color: var(--text);
     }
-    button:disabled {
-      background: #93c5fd;
-      cursor: not-allowed;
-    }
-    #preview {
-      max-height: 200px;
-      overflow-y: auto;
-      margin-bottom: 16px;
-    }
-    #error {
-      color: #dc2626;
+
+    .header p {
       font-size: 14px;
+      color: var(--text-light);
+      margin: 0;
     }
+
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 14px;
+      margin-bottom: 20px;
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23666666%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.4-12.8z%22%2F%3E%3C%2Fsvg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 12px;
+      transition: border-color 0.15s ease;
+    }
+
+    select:hover {
+      border-color: var(--primary-light);
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    #preview {
+      max-height: none;
+      margin-bottom: 20px;
+    }
+
+    .preview-section {
+      margin-bottom: 16px;
+    }
+
+    .preview-section label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
     textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
       font-family: inherit;
+      font-size: 14px;
+      line-height: 1.5;
       resize: vertical;
+      background: var(--bg);
+      color: var(--text);
+      transition: border-color 0.15s ease;
+    }
+
+    textarea:hover {
+      border-color: var(--primary-light);
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .headline-textarea {
       min-height: 2.5em;
     }
-    textarea:last-child {
+
+    .content-textarea {
       min-height: 150px;
     }
-    .preview-container {
+
+    #error {
+      font-size: 14px;
+      padding: 12px;
       margin-bottom: 16px;
+      border-radius: var(--radius);
+      background: #fef2f2;
+      color: var(--error);
+      border: 1px solid #fee2e2;
+      display: none;
     }
+
+    #error.visible {
+      display: block;
+    }
+
+    #success {
+      font-size: 14px;
+      padding: 12px;
+      margin-bottom: 16px;
+      border-radius: var(--radius);
+      background: #ecfdf5;
+      color: var(--success);
+      border: 1px solid #d1fae5;
+      display: none;
+    }
+
+    #success.visible {
+      display: block;
+    }
+
     #word-count {
       text-align: right;
-      color: #4b5563;
+      color: var(--text-light);
       font-size: 14px;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+
+    .button-container {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      flex: 1;
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      color: white;
+      background: var(--primary);
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    button:hover:not(:disabled) {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow);
+    }
+
+    button:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      background: var(--primary-light);
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
+    button.loading {
+      position: relative;
+      color: transparent;
+    }
+
+    button.loading::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 20px;
+      height: 20px;
+      margin: -10px 0 0 -10px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: button-loading-spinner 0.6s linear infinite;
+    }
+
+    @keyframes button-loading-spinner {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .footer {
+      text-align: center;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .footer a {
+      color: var(--primary);
+      font-size: 14px;
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+
+    .footer a:hover {
+      color: var(--primary-dark);
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
+  <div class="header">
+    <h1>Language Learning Assistant</h1>
+    <p>Extract and translate Spanish text</p>
+  </div>
+
   <select id="level-select">
     <option value="A1">Beginner (A1)</option>
     <option value="A2">Elementary (A2)</option>
@@ -63,18 +256,23 @@
   </select>
 
   <div id="preview"></div>
+  
   <div id="error"></div>
+  <div id="success"></div>
   
   <div id="word-count"></div>
 
-  <button id="translate-button" disabled>
-    Translate Article
-  </button>
+  <div class="button-container">
+    <button id="log-reading-button" disabled>
+      Log Reading
+    </button>
+    <button id="translate-button" disabled>
+      Translate Article
+    </button>
+  </div>
 
-  <div class="text-center mt-4">
-    <a href="#" id="settings-link" class="text-sm text-blue-600 hover:text-blue-800">
-      Settings
-    </a>
+  <div class="footer">
+    <a href="#" id="settings-link">Settings</a>
   </div>
 
   <script src="popup.js"></script>

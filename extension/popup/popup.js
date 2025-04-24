@@ -13,8 +13,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Function to update word count
   const updateWordCount = () => {
-    const headlineText = previewDiv.querySelector('textarea.headline')?.value || ''
-    const contentText = previewDiv.querySelector('textarea.content')?.value || ''
+    const headlineText = previewDiv.querySelector('#headline')?.value || ''
+    const contentText = previewDiv.querySelector('#content')?.value || ''
     const totalWords = countWords(headlineText) + countWords(contentText)
     wordCountDiv.textContent = `${totalWords} words`
   }
@@ -286,49 +286,50 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log('Extraction result:', result) // Debug output
 
       if (result.content.length > 100) { // Basic validation
-        // Create an editable preview
+        // Create an editable preview with better structure
         previewDiv.innerHTML = `
-          <div class="headline-section">
-            <label class="block text-sm font-medium mb-1">Headline:</label>
-            <textarea class="headline w-full p-2 border rounded">${result.headline}</textarea>
+          <div class="preview-section">
+            <label for="headline">Headline</label>
+            <textarea id="headline" class="headline-textarea">${result.headline}</textarea>
           </div>
-          <div class="content-section mt-4">
-            <label class="block text-sm font-medium mb-1">Content:</label>
-            <textarea class="content w-full h-40 p-2 border rounded">${result.content}</textarea>
+          <div class="preview-section">
+            <label for="content">Content</label>
+            <textarea id="content" class="content-textarea">${result.content}</textarea>
           </div>
         `
 
         // Add input listeners for word count updates
-        previewDiv.querySelector('textarea.headline').addEventListener('input', updateWordCount)
-        previewDiv.querySelector('textarea.content').addEventListener('input', updateWordCount)
+        previewDiv.querySelector('#headline').addEventListener('input', updateWordCount)
+        previewDiv.querySelector('#content').addEventListener('input', updateWordCount)
 
         // Initial word count
         updateWordCount()
 
-        // Create button container
-        const buttonContainer = document.createElement('div')
-        buttonContainer.className = 'mt-4 flex gap-2 justify-end'
-        
-        // Add Log Reading button
-        const logReadingButton = document.createElement('button')
-        logReadingButton.className = 'px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
-        logReadingButton.textContent = 'Log Reading'
+        // Enable both buttons
+        const logReadingButton = document.getElementById('log-reading-button')
+        const translateButton = document.getElementById('translate-button')
+        logReadingButton.disabled = false
+        translateButton.disabled = false
+
+        // Add click handler for log reading
         logReadingButton.onclick = async () => {
-          const headlineText = previewDiv.querySelector('textarea.headline')?.value || ''
-          const contentText = previewDiv.querySelector('textarea.content')?.value || ''
+          const headlineText = previewDiv.querySelector('#headline')?.value || ''
+          const contentText = previewDiv.querySelector('#content')?.value || ''
           const totalWords = countWords(headlineText) + countWords(contentText)
           
           console.log('Attempting to log reading with:', {
             wordCount: totalWords,
-            date: new Date().toISOString().split('T')[0],
-            source: 'extension'
+            date: new Date().toISOString().split('T')[0]
           })
           
-          // Disable both buttons while processing
+          // Disable both buttons and show loading state
           logReadingButton.disabled = true
           translateButton.disabled = true
-          const originalText = logReadingButton.textContent
-          logReadingButton.textContent = 'Saving...'
+          logReadingButton.classList.add('loading')
+          
+          // Hide any existing messages
+          document.getElementById('error').classList.remove('visible')
+          document.getElementById('success').classList.remove('visible')
           
           try {
             const response = await fetch('http://localhost:3000/api/log-reading', {
@@ -336,11 +337,10 @@ document.addEventListener('DOMContentLoaded', () => {
               headers: {
                 'Content-Type': 'application/json',
               },
-              credentials: 'include', // Include cookies for auth
+              credentials: 'include',
               body: JSON.stringify({
                 wordCount: totalWords,
-                date: new Date().toISOString().split('T')[0],
-                source: 'extension'
+                date: new Date().toISOString().split('T')[0]
               })
             })
             
@@ -356,8 +356,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Show success message
-            errorDiv.textContent = 'Reading logged successfully!'
-            errorDiv.className = 'text-green-600 mt-2'
+            const successDiv = document.getElementById('success')
+            successDiv.textContent = 'Reading logged successfully!'
+            successDiv.classList.add('visible')
             
             // Disable log reading button but keep translate enabled
             logReadingButton.textContent = 'Logged ✓'
@@ -366,26 +367,23 @@ document.addEventListener('DOMContentLoaded', () => {
             
           } catch (error) {
             console.error('Error logging reading:', error)
-            errorDiv.textContent = `Failed to log reading: ${error.message}`
-            errorDiv.className = 'text-red-600 mt-2'
+            const errorDiv = document.getElementById('error')
+            errorDiv.textContent = error.message
+            errorDiv.classList.add('visible')
             
-            // Reset button
-            logReadingButton.textContent = originalText
+            // Re-enable both buttons
             logReadingButton.disabled = false
             translateButton.disabled = false
+          } finally {
+            // Remove loading state
+            logReadingButton.classList.remove('loading')
           }
         }
         
-        // Update translate button container
-        buttonContainer.appendChild(logReadingButton)
-        buttonContainer.appendChild(translateButton)
-        previewDiv.appendChild(buttonContainer)
-        
-        translateButton.className = 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
-        translateButton.disabled = false // Ensure translate button starts enabled
+        // Update translate button handler
         translateButton.onclick = () => {
-          const editedHeadline = previewDiv.querySelector('textarea.headline')?.value || ''
-          const editedContent = previewDiv.querySelector('textarea.content')?.value || ''
+          const editedHeadline = previewDiv.querySelector('#headline')?.value || ''
+          const editedContent = previewDiv.querySelector('#content')?.value || ''
           
           console.log('Sending to translate:', {
             headline: editedHeadline,
@@ -395,7 +393,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const params = new URLSearchParams({
             text: editedHeadline && editedContent 
               ? `${editedHeadline}\n\n${editedContent}`
-              : editedContent || editedHeadline, // fallback to whichever has content
+              : editedContent || editedHeadline,
             level: levelSelect.value,
             source: 'extension'
           })
@@ -405,7 +403,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } else {
         errorDiv.textContent = 'No article content found on this page'
-        translateButton.disabled = true
+        errorDiv.classList.add('visible')
+        document.getElementById('log-reading-button').disabled = true
+        document.getElementById('translate-button').disabled = true
       }
     } catch (error) {
       errorDiv.textContent = 'Failed to extract content'
